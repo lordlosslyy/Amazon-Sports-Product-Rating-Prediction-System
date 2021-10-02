@@ -4,26 +4,15 @@ from collections import defaultdict
 from urllib.request import urlopen
 import scipy.optimize
 import random
-from sklearn import svm
-from sklearn import linear_model
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
-
-def parseDataFromURL(fname):
-    for l in urlopen(fname):
-        yield eval(l)
         
 def parseData(fname):
-    #global count
     for l in open(fname):
         l = l.replace("true", "True")
         l = l.replace("false", "False")
         yield eval(l)
-    
-data = []
+
 data = list(parseData("/Users/yunyi/Documents/Sports_and_Outdoors_5.json"))
 random.shuffle(data)
-
 
 train_data = data[:500000]
 
@@ -39,8 +28,6 @@ nUsers = len(userCount)
 nItems = len(itemCount)
 users = list(userCount.keys())
 items = list(itemCount.keys())
-
-
 userBiases = defaultdict(float)
 itemBiases = defaultdict(float)
 #The actual prediction function of our model is simple: Just predict using a global offset (alpha), a user offset (beta_u in the slides), and an item offset (beta_i)
@@ -95,26 +82,22 @@ def derivative(theta, labels, lamb):
     return np.array(dtheta)
 
 ratingMean = sum([d['overall'] for d in train_data]) / len(train_data)
-print(ratingMean)
 alpha = ratingMean
 
 alwaysPredictMean = [ratingMean for d in train_data] 
 labels = [d['overall'] for d in train_data]
-
-print(MSE(alwaysPredictMean, labels))
 
 lambdaList = [1e-3, 1e-4, 1e-5, 1e-6] 
 MSEList = []
 thetaList = []
 
 for lamb in lambdaList:
-    theta, curMSE, _ = scipy.optimize.fmin_l_bfgs_b(cost, [alpha] + [0.0]*(nUsers+nItems),
-                             derivative, args = (labels, lamb), maxiter = 30)
+    theta, curMSE, _ = scipy.optimize.fmin_l_bfgs_b(cost, [alpha] + [0.0]*(nUsers+nItems), derivative, args = (labels, lamb), maxiter = 30)
     MSEList.append(curMSE)
     thetaList.append(theta)
 
+###
 valid_data = data[500000:1000000]
-test_data = data[1000000:1500000]
 
 validMSEList = []
 
@@ -135,44 +118,12 @@ for theta in thetaList:
     validMSEList.append(valid_mse)
     print('MSE of validation set {}'.format(valid_mse))
 
-testMSEList = []
-for theta in thetaList:
-    predictions = []
-    unpack(theta) 
-    #global itemBiases
-    for d in test_data: 
-        p = ratingMean
-        if d['reviewerID'] in userBiases:
-            p += userBiases[d['reviewerID']]
-        if d['asin'] in itemBiases:
-            p += itemBiases[d['asin']]
-        predictions.append(p)
-        #predictions.append(prediction(d['reviewerID'], d['asin']))
-    label_valid = [d['overall'] for d in test_data]
-
-    test_mse = MSE(predictions, label_valid)
-    testMSEList.append(test_mse)
-    print('MSE of test set {}'.format(test_mse))
-    
-ratingMeanT = sum([d['overall'] for d in test_data]) / len(test_data)
-print(ratingMeanT)
-
-alwaysPredictMeanT = [ratingMeanT for d in test_data] 
-labelsT = [d['overall'] for d in test_data]
 
 baselineV = MSE(alwaysPredictMean, labels)
 baselineArr = [baselineV] * len(thetaList)
 
-lambdaList1 = lambdaList 
-MSEList1 = MSEList 
-validMSEList1 = validMSEList 
-testMSEList1 = testMSEList
-baselineArr1 = baselineArr 
-thetaList1 = thetaList
-
 plt.plot(lambdaList, MSEList, label = "trainData MSE")
 plt.plot(lambdaList, validMSEList, label = "validationData MSE") 
-plt.plot(lambdaList, testMSEList, label = "testData MSE") 
 plt.plot(lambdaList, baselineArr, label = "Baseline") 
 
 plt.xscale("log")
@@ -182,17 +133,3 @@ plt.ylabel("MSE")
 plt.title("MSE in Different set and Different Lambda")
 plt.legend()
 plt.show()
-
-
-plt.plot(lambdaList, MSEList, label = "trainData MSE")
-plt.plot(lambdaList, validMSEList, label = "validationData MSE") 
-plt.plot(lambdaList, testMSEList, label = "testData MSE") 
-
-plt.xscale("log")
-plt.xlabel("Lambda (log scale)")
-plt.ylabel("MSE")
-
-plt.title("MSE in Different set and Different Lambda")
-plt.legend()
-plt.show()
-
