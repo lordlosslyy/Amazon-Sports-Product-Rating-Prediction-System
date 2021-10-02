@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -28,29 +22,17 @@ def parseData(fname):
     
 data = []
 data = list(parseData("/Users/yunyi/Documents/Sports_and_Outdoors_5.json"))
-print("done")
-print(len(data))
-print(data[0])
-
 random.shuffle(data)
 
-print(data[0])
 
 train_data = data[:500000]
 
 itemCount = defaultdict(int)
 userCount = defaultdict(int)
 
-
 for d in train_data:
-    #GamesEachUser[user].add(game)
-    #UsersEachGame[game].add(user)
-    
-    #if game not in TotalGames:
-    #    TotalGames.append(game)
     itemCount[d['asin']] += 1
     userCount[d['reviewerID']] += 1
-    #totalPlayed += 1
 
 N = len(train_data)
 nUsers = len(userCount)
@@ -59,15 +41,9 @@ users = list(userCount.keys())
 items = list(itemCount.keys())
 
 
-# In[9]:
-
-
 userBiases = defaultdict(float)
 itemBiases = defaultdict(float)
 #The actual prediction function of our model is simple: Just predict using a global offset (alpha), a user offset (beta_u in the slides), and an item offset (beta_i)
-
-#def time_transform(time):
-#    return math.log(time+1, 2)
 
 def MSE(predictions, labels):
     differences = [(x-y)**2 for x,y in zip(predictions,labels)]
@@ -118,28 +94,15 @@ def derivative(theta, labels, lamb):
     dtheta = [dalpha] + [dUserBiases[u] for u in users] + [dItemBiases[i] for i in items]
     return np.array(dtheta)
 
-
-# In[10]:
-
-
 ratingMean = sum([d['overall'] for d in train_data]) / len(train_data)
 print(ratingMean)
 alpha = ratingMean
-
-
-# In[11]:
-
 
 alwaysPredictMean = [ratingMean for d in train_data] 
 labels = [d['overall'] for d in train_data]
 
 print(MSE(alwaysPredictMean, labels))
 
-
-# In[13]:
-
-
-#lambdaList = [1e-5] 
 lambdaList = [1e-3, 1e-4, 1e-5, 1e-6] 
 MSEList = []
 thetaList = []
@@ -150,38 +113,8 @@ for lamb in lambdaList:
     MSEList.append(curMSE)
     thetaList.append(theta)
 
-
-# In[14]:
-
-
-#plt.plot(cValue, testBER, label = "Test BER") 
-plt.plot(lambdaList, MSEList, label = "trainData MSE") 
-#plt.plot(lambdaList, validationBER, label = "Validation BER") 
-
-plt.xscale("log")
-plt.xlabel("Lambda")
-plt.ylabel("MSE")
-
-plt.title("MSE in Different Lambda")
-plt.legend()
-plt.show()
-
-
-# In[15]:
-
-
-print(MSEList)
-
-
-# In[16]:
-
-
 valid_data = data[500000:1000000]
 test_data = data[1000000:1500000]
-
-
-# In[17]:
-
 
 validMSEList = []
 
@@ -201,17 +134,11 @@ for theta in thetaList:
     valid_mse = MSE(predictions, label_valid)
     validMSEList.append(valid_mse)
     print('MSE of validation set {}'.format(valid_mse))
-    
-
-
-# In[18]:
-
 
 testMSEList = []
 for theta in thetaList:
     predictions = []
     unpack(theta) 
-    #    global userBiases
     #global itemBiases
     for d in test_data: 
         p = ratingMean
@@ -227,27 +154,14 @@ for theta in thetaList:
     testMSEList.append(test_mse)
     print('MSE of test set {}'.format(test_mse))
     
-
-
-# In[19]:
-
-
 ratingMeanT = sum([d['overall'] for d in test_data]) / len(test_data)
 print(ratingMeanT)
 
 alwaysPredictMeanT = [ratingMeanT for d in test_data] 
 labelsT = [d['overall'] for d in test_data]
 
-
-# In[20]:
-
-
 baselineV = MSE(alwaysPredictMean, labels)
 baselineArr = [baselineV] * len(thetaList)
-
-
-# In[21]:
-
 
 lambdaList1 = lambdaList 
 MSEList1 = MSEList 
@@ -268,9 +182,6 @@ plt.ylabel("MSE")
 plt.title("MSE in Different set and Different Lambda")
 plt.legend()
 plt.show()
-
-
-# In[22]:
 
 
 plt.plot(lambdaList, MSEList, label = "trainData MSE")
