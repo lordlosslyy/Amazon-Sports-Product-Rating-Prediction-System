@@ -30,7 +30,6 @@ users = list(userCount.keys())
 items = list(itemCount.keys())
 userBiases = defaultdict(float)
 itemBiases = defaultdict(float)
-#The actual prediction function of our model is simple: Just predict using a global offset (alpha), a user offset (beta_u in the slides), and an item offset (beta_i)
 
 def MSE(predictions, labels):
     differences = [(x-y)**2 for x,y in zip(predictions,labels)]
@@ -38,7 +37,6 @@ def MSE(predictions, labels):
 
 def prediction(user, item):
     return alpha + userBiases[user] + itemBiases[item]
-#We'll use another library in this example to perform gradient descent. This library requires that we pass it a "flat" parameter vector (theta) containing all of our parameters. This utility function just converts between a flat feature vector, and our model parameters, i.e., it "unpacks" theta into our offset and bias parameters.
 
 def unpack(theta):
     global alpha
@@ -48,7 +46,6 @@ def unpack(theta):
     userBiases = dict(zip(users, theta[1:nUsers+1]))
     itemBiases = dict(zip(items, theta[1+nUsers:]))
     
-# The "cost" function is the function we are trying to optimize. Again this is a requirement of the gradient descent library we'll use. In this case, we're just computing the (regularized) MSE of a particular solution (theta), and returning the cost.
 def cost(theta, labels, lamb):
     unpack(theta)
     predictions = [prediction(d['reviewerID'], d['asin']) for d in train_data]
@@ -60,7 +57,6 @@ def cost(theta, labels, lamb):
         cost += lamb*itemBiases[i]**2
     return cost
 
-#The derivative function is the most difficult to implement, but follows the definitions of the derivatives for this model as given in the lectures. This step could be avoided if using a gradient descent implementation based on (e.g.) Tensorflow.
 def derivative(theta, labels, lamb):
     unpack(theta)
     N = len(train_data)
